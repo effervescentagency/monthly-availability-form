@@ -95,7 +95,7 @@ textarea:focus{outline:2px solid #f9a8d4;outline-offset:1px;}
 </div>
 <script>
 (function(){
-var SCRIPT_URL = "https://script.google.com/a/macros/effervescent.agency/s/AKfycbyB8Tz5vRDAxDz29E8ao1dlYhSwbGo_4nE-9cHvVS6sNggTqXhx6y_8ono-AAS7R_AB/exec";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB8Tz5vRDAxDz29E8ao1dlYhSwbGo_4nE-9cHvVS6sNggTqXhx6y_8ono-AAS7R_AB/exec";
 var MONTH_NAME = "September";
 var MONTH_INDEX = 8;
 var YEAR = 2026;
@@ -195,12 +195,18 @@ notes: document.getElementById("comments").value
 btn.disabled = true;
 fetch(SCRIPT_URL, {
 method: "POST",
-mode: "no-cors",
 body: JSON.stringify(payload)
-}).then(function(){
+}).then(function(r){ return r.json(); }).then(function(res){
+if (res && res.success) {
 successMsg.style.display = "inline";
 setTimeout(function(){ successMsg.style.display = "none"; }, 5000);
+} else {
+errorMsg.textContent = (res && res.message) ? res.message : "Something went wrong. Please try again.";
+errorMsg.style.display = "inline";
+btn.disabled = false;
+}
 }).catch(function(){
+errorMsg.textContent = "Something went wrong. Please try again.";
 errorMsg.style.display = "inline";
 btn.disabled = false;
 });
