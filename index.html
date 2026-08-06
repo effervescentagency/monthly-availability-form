@@ -18,6 +18,8 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f9fafb;color:#1
 .info{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px;font-size:12px;line-height:1.6;color:#4b5563;}
 .info p{margin:0 0 8px;}
 .info p:last-child{margin-bottom:0;font-weight:700;color:#374151;}
+.name-input{width:100%;padding:10px 12px;font-size:14px;border:1px solid #e5e7eb;border-radius:12px;font-family:inherit;box-sizing:border-box;}
+.name-input:focus{outline:2px solid #f9a8d4;outline-offset:1px;}
 .row-btn{width:100%;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;text-align:left;cursor:pointer;font-size:14px;font-family:inherit;margin-bottom:8px;transition:border-color .15s;box-sizing:border-box;}
 .row-btn:hover{border-color:#f9a8d4;}
 .row-btn.checked{border-color:#fdb8d7;}
@@ -44,6 +46,7 @@ textarea:focus{outline:2px solid #f9a8d4;outline-offset:1px;}
 .submit-btn:disabled{opacity:.5;cursor:not-allowed;}
 .submit-btn:not(:disabled):hover{background:#db2777;}
 .success{font-size:13px;color:#16a34a;font-weight:600;}
+.error-msg{font-size:13px;color:#dc2626;font-weight:600;}
 </style>
 </head>
 <body>
@@ -54,6 +57,10 @@ textarea:focus{outline:2px solid #f9a8d4;outline-offset:1px;}
 <h2 class="title" id="formTitle">Your Availability for September 2026</h2>
 </div>
 <div class="body">
+<div class="section">
+<label class="label" for="nameInput">Your Name<span class="req">*</span></label>
+<input type="text" class="name-input" id="nameInput" placeholder="Full name">
+</div>
 <div class="section">
 <label class="label">Dates Available<span class="req">*</span></label>
 <div class="info">
@@ -81,12 +88,14 @@ textarea:focus{outline:2px solid #f9a8d4;outline-offset:1px;}
 </div>
 <div class="footer">
 <span class="success" id="successMsg" style="display:none;">Thanks! Your availability has been recorded.</span>
+<span class="error-msg" id="errorMsg" style="display:none;">Something went wrong. Please try again.</span>
 <button type="button" class="submit-btn" id="submitBtn" disabled>Submit</button>
 </div>
 </div>
 </div>
 <script>
 (function(){
+var SCRIPT_URL = "https://script.google.com/a/macros/effervescent.agency/s/AKfycbyB8Tz5vRDAxDz29E8ao1dlYhSwbGo_4nE-9cHvVS6sNggTqXhx6y_8ono-AAS7R_AB/exec";
 var MONTH_NAME = "September";
 var MONTH_INDEX = 8;
 var YEAR = 2026;
@@ -107,12 +116,14 @@ var btn = document.createElement("button");
 btn.type = "button";
 btn.className = "row-btn";
 btn.dataset.day = d;
-btn.innerHTML = '<span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="4,12 9,17 20,6"></polyline></svg></span><span>' + wd + " " + ordinal(d) + " " + MONTH_NAME + '</span>';
+var labelText = wd + " " + ordinal(d) + " " + MONTH_NAME;
+btn.innerHTML = '<span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="4,12 9,17 20,6"></polyline></svg></span><span>' + labelText + '</span>';
+btn.dataset.label = labelText;
 btn.addEventListener("click", (function(day, el){
 return function(){
 if (unavailableAll) return;
 if (selectedDates[day]) { delete selectedDates[day]; el.classList.remove("checked"); }
-else { selectedDates[day] = true; el.classList.add("checked"); }
+else { selectedDates[day] = el.dataset.label; el.classList.add("checked"); }
 updateBadge();
 updateSubmit();
 };
@@ -160,14 +171,39 @@ else { selectedLocations[loc] = true; btn.classList.add("checked"); }
 });
 locationsList.appendChild(btn);
 });
+var nameInput = document.getElementById("nameInput");
+nameInput.addEventListener("input", updateSubmit);
 function updateSubmit(){
 var count = Object.keys(selectedDates).length;
-document.getElementById("submitBtn").disabled = !(unavailableAll || count > 0);
+var hasName = nameInput.value.trim().length > 0;
+document.getElementById("submitBtn").disabled = !(hasName && (unavailableAll || count > 0));
 }
 document.getElementById("submitBtn").addEventListener("click", function(){
-document.getElementById("successMsg").style.display = "inline";
-this.disabled = true;
-setTimeout(function(){ document.getElementById("successMsg").style.display = "none"; }, 4000);
+var btn = this;
+var errorMsg = document.getElementById("errorMsg");
+var successMsg = document.getElementById("successMsg");
+errorMsg.style.display = "none";
+successMsg.style.display = "none";
+var payload = {
+monthYear: MONTH_NAME + " " + YEAR,
+name: nameInput.value.trim(),
+unavailableAll: unavailableAll,
+dates: Object.keys(selectedDates).map(function(k){ return selectedDates[k]; }),
+locations: Object.keys(selectedLocations),
+notes: document.getElementById("comments").value
+};
+btn.disabled = true;
+fetch(SCRIPT_URL, {
+method: "POST",
+mode: "no-cors",
+body: JSON.stringify(payload)
+}).then(function(){
+successMsg.style.display = "inline";
+setTimeout(function(){ successMsg.style.display = "none"; }, 5000);
+}).catch(function(){
+errorMsg.style.display = "inline";
+btn.disabled = false;
+});
 });
 })();
 </script>
