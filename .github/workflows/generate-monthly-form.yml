@@ -1,0 +1,31 @@
+name: Generate next monthly availability form
+
+on:
+  schedule:
+    # 06:00 UTC on the 1st of every month
+    - cron: "0 6 1 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate the form 12 months ahead
+        run: node scripts/generate-month.mjs --ahead=12
+
+      - name: Commit and push if a new form was created
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Auto-generate monthly availability form"
+            git push
+          else
+            echo "Nothing new to commit."
+          fi
