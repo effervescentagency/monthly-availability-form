@@ -99,6 +99,7 @@ var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB8Tz5vRDAxDz29E8ao1d
 var MONTH_NAME = "December";
 var MONTH_INDEX = 11;
 var YEAR = 2026;
+var TOKEN = new URLSearchParams(window.location.search).get('t') || '';
 var daysInMonth = new Date(YEAR, MONTH_INDEX+1, 0).getDate();
 var weekday = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 var selectedDates = {};
@@ -185,6 +186,7 @@ var successMsg = document.getElementById("successMsg");
 errorMsg.style.display = "none";
 successMsg.style.display = "none";
 var payload = {
+token: TOKEN,
 monthYear: MONTH_NAME + " " + YEAR,
 name: nameInput.value.trim(),
 unavailableAll: unavailableAll,
