@@ -1,1 +1,1 @@
-{"rewrites":[{"source":"/(.*)","destination":"/fallback.html"}]}
+{"redirects":[{"source":"/","destination":"/fallback.html","permanent":false}],"rewrites":[{"source":"/(.*)","destination":"/fallback.html"}]}
