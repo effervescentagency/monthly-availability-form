@@ -1,1 +1,25 @@
-{"redirects":[{"source":"/","destination":"/fallback.html","permanent":false}],"rewrites":[{"source":"/(.*)","destination":"/fallback.html"}]}
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/fallback.html",
+      "permanent": false
+    },
+    {
+      "source": "/:slug(\\w+-\\d{4})",
+      "destination": "/form/?s=:slug",
+      "permanent": false
+    },
+    {
+      "source": "/:slug(\\w+-\\d{4})/",
+      "destination": "/form/?s=:slug",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/fallback.html"
+    }
+  ]
+}
