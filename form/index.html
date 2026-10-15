@@ -112,6 +112,48 @@ var YEAR = parseInt(__bits[1], 10);
 var MONTH_NAME = MONTH_INDEX > -1 ? MONTHS_LOWER[MONTH_INDEX].charAt(0).toUpperCase() + MONTHS_LOWER[MONTH_INDEX].slice(1) : "";
 var TOKEN = (__q.get("t") || "").trim();
 
+/* Where to go when this month is done. The onboarding flow hands over the rest
+   of the months with the link, so finishing one opens the next instead of
+   dropping somebody back on a page to hunt for it. Both are only followed if
+   they point at our own forms - anything else is ignored, not obeyed. */
+var FORM_HOSTS = ["monthly-availability-clone.vercel.app"];
+var FINISH_HOSTS = ["effervescent-recruitment-crm.vercel.app"];
+function __safeUrl(raw, hosts){
+  if (!raw) return "";
+  try {
+    var u = new URL(raw, window.location.origin);
+    if (u.protocol !== "https:") return "";
+    if (hosts.indexOf(u.hostname) === -1) return "";
+    return u.toString();
+  } catch (e) { return ""; }
+}
+var NEXT_MONTHS = (__q.get("next") || "").split(",").map(function(s){
+  return __safeUrl(s.trim(), FORM_HOSTS);
+}).filter(Boolean);
+var FINISH_URL = __safeUrl((__q.get("finish") || "").trim(), FINISH_HOSTS);
+
+/* The next month is handed everything this one was given, minus itself. */
+function __nextLink(){
+  if (!NEXT_MONTHS.length) return "";
+  var head = NEXT_MONTHS[0];
+  var rest = NEXT_MONTHS.slice(1);
+  var parts = [];
+  if (TOKEN) parts.push("t=" + encodeURIComponent(TOKEN));
+  if (rest.length) parts.push("next=" + encodeURIComponent(rest.join(",")));
+  if (FINISH_URL) parts.push("finish=" + encodeURIComponent(FINISH_URL));
+  if (!parts.length) return head;
+  return head + (head.indexOf("?") > -1 ? "&" : "?") + parts.join("&");
+}
+function __labelFor(url){
+  try {
+    var p = new URL(url).pathname.split("/").filter(Boolean);
+    var bits = (p[p.length - 1] || "").split("-");
+    var i = MONTHS_LOWER.indexOf(bits[0]);
+    if (i > -1) return MONTHS_LOWER[i].charAt(0).toUpperCase() + MONTHS_LOWER[i].slice(1);
+  } catch (e) {}
+  return "the next month";
+}
+
 /* The link we send is personal, and it is the only thing that says whose
    availability this is. A submission without it used to land in the
    spreadsheet under whatever name was typed while the CRM carried on
@@ -290,6 +332,28 @@ method: "POST",
 body: JSON.stringify(payload)
 }).then(function(r){ return r.json(); }).then(function(res){
 if (res && res.success) {
+/* Straight on to the next month. The old flow stopped here with a line of
+   green text, which read as the end of the job even when it was not. */
+var __next = __nextLink();
+if (__next) {
+successMsg.textContent = MONTH_NAME + " saved - opening " + __labelFor(NEXT_MONTHS[0]) + "...";
+successMsg.style.display = "inline";
+setTimeout(function(){ window.location.replace(__next); }, 900);
+return;
+}
+if (FINISH_URL) {
+successMsg.textContent = MONTH_NAME + " saved. That is everything - tap Complete.";
+successMsg.style.display = "inline";
+btn.style.display = "none";
+var __doneBtn = document.createElement("a");
+__doneBtn.href = FINISH_URL;
+__doneBtn.className = "submit-btn";
+__doneBtn.style.display = "inline-block";
+__doneBtn.style.textDecoration = "none";
+__doneBtn.textContent = "Complete";
+btn.parentNode.appendChild(__doneBtn);
+return;
+}
 successMsg.style.display = "inline";
 setTimeout(function(){ successMsg.style.display = "none"; }, 5000);
 } else {
