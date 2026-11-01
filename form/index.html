@@ -81,7 +81,7 @@ textarea:focus{outline:2px solid #f9a8d4;outline-offset:1px;}
 </button>
 <div class="month-body" id="monthBody"></div>
 </div>
-<div class="divider-row"><span class="divider-label">Locations</span><span class="divider-line"></span></div>
+<div class="divider-row"><span class="divider-label">Locations<span class="req">*</span></span><span class="divider-line"></span></div>
 <div class="locations" id="locationsList"></div>
 <div class="divider-row"><span class="divider-label">Additional Comments</span><span class="divider-line"></span></div>
 <textarea id="comments" placeholder="Anything else we should know..."></textarea>
@@ -273,6 +273,7 @@ btn.innerHTML = '<span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="
 btn.addEventListener("click", function(){
 if (selectedLocations[loc]) { delete selectedLocations[loc]; btn.classList.remove("checked"); }
 else { selectedLocations[loc] = true; btn.classList.add("checked"); }
+updateSubmit();
 });
 locationsList.appendChild(btn);
 });
@@ -309,7 +310,11 @@ fetch("https://effervescent-recruitment-crm.vercel.app/api/availability-access?t
 function updateSubmit(){
 var count = Object.keys(selectedDates).length;
 var hasName = nameInput.value.trim().length > 0;
-document.getElementById("submitBtn").disabled = !(hasName && (unavailableAll || count > 0));
+/* A location is now required the same way a date is. Someone marking
+   themselves unavailable for the whole month is excused it - there is
+   nothing to place them at. */
+var hasLocation = Object.keys(selectedLocations).length > 0;
+document.getElementById("submitBtn").disabled = !(hasName && (unavailableAll || (count > 0 && hasLocation)));
 }
 document.getElementById("submitBtn").addEventListener("click", function(){
 var btn = this;
